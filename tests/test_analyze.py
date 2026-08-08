@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from otomoto_median.analyze import analyze_search, format_report
+from otomoto_median.analyze import analyze_search, format_report, infer_vehicle_label
 
 
 def _page_html(ids_prices: list[tuple[str, int]], *, total: int, offset: int, page_size: int = 2) -> str:
@@ -82,7 +82,67 @@ def test_analyze_search_paginates_and_dedups():
 
     uk_report = format_report(result, lang="uk")
     assert "Аналіз цін OtoMoto" in uk_report
+    assert "Авто: Toyota Corolla" in uk_report
     assert "Медіана:" in uk_report
     assert "За типом продавця:" in uk_report
     assert "приватний:" in uk_report
     assert "Median:" not in uk_report
+
+    assert "Vehicle: Toyota Corolla" in report
+
+
+def test_infer_vehicle_label_uses_filters():
+    from otomoto_median.models import Listing, PriceStats
+    from otomoto_median.analyze import AnalysisResult
+
+    listings = [
+        Listing(
+            id="1",
+            title="Volkswagen Golf 1.6 TDI",
+            url="https://example.com/1",
+            price=30_000,
+            currency="PLN",
+            year=2016,
+            mileage_km=100_000,
+            fuel_type="diesel",
+            gearbox="manual",
+            make="volkswagen",
+            model="golf",
+            city="Warszawa",
+            region="Mazowieckie",
+            seller_type="private",
+            created_at=None,
+        )
+    ]
+    stats = PriceStats(
+        n=1,
+        n_without_price=0,
+        median=30_000,
+        mean=30_000,
+        min=30_000,
+        max=30_000,
+        q1=30_000,
+        q3=30_000,
+        currency="PLN",
+        total_on_otomoto=1,
+        scraped=1,
+        pages_fetched=1,
+        truncated=False,
+    )
+    result = AnalysisResult(
+        search_url=(
+            "https://www.otomoto.pl/osobowe/volkswagen/golf"
+            "?search%5Bfilter_float_year%3Afrom%5D=2016"
+            "&search%5Bfilter_float_year%3Ato%5D=2016"
+            "&search%5Bfilter_float_engine_capacity%3Afrom%5D=1500"
+            "&search%5Bfilter_float_engine_capacity%3Ato%5D=1700"
+            "&search%5Bfilter_enum_fuel_type%5D%5B0%5D=diesel"
+        ),
+        listings=listings,
+        stats=stats,
+        by_year={"2016": stats},
+        by_seller={"private": stats},
+    )
+    assert infer_vehicle_label(result, lang="uk") == "Volkswagen Golf 1.6 · 2016 · дизель"
+    report = format_report(result, lang="uk")
+    assert "Авто: Volkswagen Golf 1.6 · 2016 · дизель" in report
