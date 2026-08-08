@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from .fetcher import fetch_html
 from .models import Listing, PriceStats
-from .parser import parse_search_page, with_page
+from .parser import parse_search_page, with_page, with_price_order_asc
 from .stats import compute_stats, group_by_seller, group_by_year, valid_prices
 
 
@@ -43,6 +43,9 @@ def analyze_search(
     """Fetch paginated OtoMoto search results and compute price stats."""
     if max_listings < 1:
         raise ValueError("max_listings must be >= 1")
+
+    # Always sort by price ascending so report links open in that order.
+    search_url = with_price_order_asc(search_url)
 
     collected: list[Listing] = []
     seen_ids: set[str] = set()
