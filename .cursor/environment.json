@@ -1,4 +1,4 @@
 {
   "name": "OtoMoto median analyzer",
-  "install": "python -m pip install -e \".[dev]\""
+  "install": "python3 -m pip install -e \".[dev]\""
 }
