@@ -29,13 +29,13 @@ python -m otomoto_median \
 | `--json` | Print full JSON to stdout |
 | `--save-json PATH` | Write full JSON result to a file |
 | `--no-breakdowns` | Hide year/seller sections in text report |
-| `--telegram` | Send the text report via Telegram Bot API |
+| `--telegram` | Send the text report via Telegram Bot API (always Ukrainian) |
 
 ## Telegram
 
 1. Copy `telegram.env.example` → `.secrets/telegram.env`
 2. Fill `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`
-3. Run with `--telegram`:
+3. Run with `--telegram` (the Telegram message is always in Ukrainian):
 
 ```bash
 python -m otomoto_median --url "https://www.otomoto.pl/osobowe/toyota/corolla" --max 64 --telegram

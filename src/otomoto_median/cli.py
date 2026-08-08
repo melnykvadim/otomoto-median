@@ -59,7 +59,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--telegram",
         action="store_true",
-        help="Also send the text report to Telegram (.secrets/telegram.env)",
+        help="Also send the text report to Telegram in Ukrainian (.secrets/telegram.env)",
     )
     return parser
 
@@ -84,7 +84,8 @@ def main(argv: list[str] | None = None) -> int:
             encoding="utf-8",
         )
 
-    report = format_report(result, include_breakdowns=not args.no_breakdowns)
+    include_breakdowns = not args.no_breakdowns
+    report = format_report(result, include_breakdowns=include_breakdowns)
 
     if args.json:
         print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
@@ -94,8 +95,12 @@ def main(argv: list[str] | None = None) -> int:
             print(f"\nSaved JSON: {args.save_json}")
 
     if args.telegram:
+        # Telegram replies are always Ukrainian.
+        telegram_report = format_report(
+            result, include_breakdowns=include_breakdowns, lang="uk"
+        )
         try:
-            send_telegram_message(report)
+            send_telegram_message(telegram_report)
         except TelegramError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 1

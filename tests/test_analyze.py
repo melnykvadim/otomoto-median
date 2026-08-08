@@ -79,3 +79,10 @@ def test_analyze_search_paginates_and_dedups():
     report = format_report(result)
     assert "Median:" in report
     assert "55 000 PLN" in report or "55000 PLN" in report.replace(" ", "")
+
+    uk_report = format_report(result, lang="uk")
+    assert "Аналіз цін OtoMoto" in uk_report
+    assert "Медіана:" in uk_report
+    assert "За типом продавця:" in uk_report
+    assert "приватний:" in uk_report
+    assert "Median:" not in uk_report
