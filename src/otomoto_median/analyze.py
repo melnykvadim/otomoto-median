@@ -122,55 +122,133 @@ def analyze_search(
     )
 
 
-def format_money(value: float | int | None, currency: str = "PLN") -> str:
+_SELLER_LABELS_UK = {
+    "private": "приватний",
+    "professional": "дилер",
+    "unknown": "невідомо",
+}
+
+
+def format_money(
+    value: float | int | None,
+    currency: str = "PLN",
+    *,
+    lang: str = "en",
+) -> str:
     if value is None:
-        return "n/a"
+        return "н/д" if lang == "uk" else "n/a"
     return f"{int(round(value)):,} {currency}".replace(",", " ")
 
 
-def format_report(result: AnalysisResult, *, include_breakdowns: bool = True) -> str:
+def _seller_label(key: str, *, lang: str) -> str:
+    if lang == "uk":
+        return _SELLER_LABELS_UK.get(key, key)
+    return key
+
+
+def format_report(
+    result: AnalysisResult,
+    *,
+    include_breakdowns: bool = True,
+    lang: str = "en",
+) -> str:
+    """Format analysis as text. Use lang='uk' for Ukrainian (Telegram default)."""
     s = result.stats
-    lines = [
-        "OtoMoto price analysis",
-        f"URL: {result.search_url}",
-        f"Scraped: {s.scraped} listings across {s.pages_fetched} page(s)"
-        + (f" (OtoMoto totalCount={s.total_on_otomoto})" if s.total_on_otomoto is not None else ""),
-        f"With price: {s.n} | without/invalid price: {s.n_without_price}"
-        + (" | truncated=yes" if s.truncated else ""),
-        "",
-        f"Median: {format_money(s.median, s.currency)}",
-        f"Q1–Q3:  {format_money(s.q1, s.currency)} – {format_money(s.q3, s.currency)}",
-        f"Min–Max: {format_money(s.min, s.currency)} – {format_money(s.max, s.currency)}",
-        f"Mean:   {format_money(s.mean, s.currency)}",
-    ]
+
+    if lang == "uk":
+        scraped = (
+            f"Зібрано: {s.scraped} оголошень з {s.pages_fetched} стор."
+            + (
+                f" (усього на OtoMoto: {s.total_on_otomoto})"
+                if s.total_on_otomoto is not None
+                else ""
+            )
+        )
+        with_price = (
+            f"З ціною: {s.n} | без/некоректна ціна: {s.n_without_price}"
+            + (" | обрізано=так" if s.truncated else "")
+        )
+        lines = [
+            "Аналіз цін OtoMoto",
+            f"URL: {result.search_url}",
+            scraped,
+            with_price,
+            "",
+            f"Медіана: {format_money(s.median, s.currency, lang=lang)}",
+            f"Q1–Q3:  {format_money(s.q1, s.currency, lang=lang)} – "
+            f"{format_money(s.q3, s.currency, lang=lang)}",
+            f"Мін–Макс: {format_money(s.min, s.currency, lang=lang)} – "
+            f"{format_money(s.max, s.currency, lang=lang)}",
+            f"Середнє: {format_money(s.mean, s.currency, lang=lang)}",
+        ]
+        seller_header = "За типом продавця:"
+        year_header = "За роком (n≥3):"
+        year_empty = "  (недостатньо вибірки по роках)"
+        sample_line = "Розмір вибірки для медіани: {n}"
+        median_word = "медіана"
+    else:
+        scraped = (
+            f"Scraped: {s.scraped} listings across {s.pages_fetched} page(s)"
+            + (
+                f" (OtoMoto totalCount={s.total_on_otomoto})"
+                if s.total_on_otomoto is not None
+                else ""
+            )
+        )
+        with_price = (
+            f"With price: {s.n} | without/invalid price: {s.n_without_price}"
+            + (" | truncated=yes" if s.truncated else "")
+        )
+        lines = [
+            "OtoMoto price analysis",
+            f"URL: {result.search_url}",
+            scraped,
+            with_price,
+            "",
+            f"Median: {format_money(s.median, s.currency, lang=lang)}",
+            f"Q1–Q3:  {format_money(s.q1, s.currency, lang=lang)} – "
+            f"{format_money(s.q3, s.currency, lang=lang)}",
+            f"Min–Max: {format_money(s.min, s.currency, lang=lang)} – "
+            f"{format_money(s.max, s.currency, lang=lang)}",
+            f"Mean:   {format_money(s.mean, s.currency, lang=lang)}",
+        ]
+        seller_header = "By seller type:"
+        year_header = "By year (n>=3):"
+        year_empty = "  (not enough per-year samples)"
+        sample_line = "Price sample size used for median: {n}"
+        median_word = "median"
 
     if include_breakdowns and result.by_seller:
         lines.append("")
-        lines.append("By seller type:")
+        lines.append(seller_header)
         for key, stats in result.by_seller.items():
+            label = _seller_label(key, lang=lang)
             lines.append(
-                f"  - {key}: median {format_money(stats.median, stats.currency)} (n={stats.n})"
+                f"  - {label}: {median_word} "
+                f"{format_money(stats.median, stats.currency, lang=lang)} (n={stats.n})"
             )
 
     if include_breakdowns and result.by_year:
         lines.append("")
-        lines.append("By year (n>=3):")
+        lines.append(year_header)
         shown = 0
         for key, stats in result.by_year.items():
             if stats.n < 3:
                 continue
+            year_label = "невідомо" if lang == "uk" and key == "unknown" else key
             lines.append(
-                f"  - {key}: median {format_money(stats.median, stats.currency)} "
-                f"(n={stats.n}, Q1={format_money(stats.q1, stats.currency)}, "
-                f"Q3={format_money(stats.q3, stats.currency)})"
+                f"  - {year_label}: {median_word} "
+                f"{format_money(stats.median, stats.currency, lang=lang)} "
+                f"(n={stats.n}, Q1={format_money(stats.q1, stats.currency, lang=lang)}, "
+                f"Q3={format_money(stats.q3, stats.currency, lang=lang)})"
             )
             shown += 1
         if shown == 0:
-            lines.append("  (not enough per-year samples)")
+            lines.append(year_empty)
 
     prices = valid_prices(result.listings)
     if prices:
         lines.append("")
-        lines.append(f"Price sample size used for median: {len(prices)}")
+        lines.append(sample_line.format(n=len(prices)))
 
     return "\n".join(lines)
