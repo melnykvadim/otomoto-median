@@ -158,17 +158,30 @@ def parse_search_page(html: str) -> tuple[list[Listing], dict[str, Any]]:
     return listings, meta
 
 
+def _set_query_params(url: str, updates: dict[str, str | None]) -> str:
+    """Set or remove query params while preserving existing filters."""
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query, keep_blank_values=True)
+    for key, value in updates.items():
+        if value is None:
+            query.pop(key, None)
+        else:
+            query[key] = [value]
+    pairs: list[tuple[str, str]] = []
+    for key, values in query.items():
+        for item in values:
+            pairs.append((key, item))
+    new_query = urlencode(pairs, doseq=False)
+    return urlunparse(parsed._replace(query=new_query))
+
+
+def with_price_order_asc(url: str) -> str:
+    """Ensure OtoMoto search URL sorts listings by price ascending."""
+    return _set_query_params(url, {"search[order]": "filter_float_price:asc"})
+
+
 def with_page(url: str, page: int) -> str:
     """Return search URL with page query set (1-based)."""
     if page < 1:
         raise ValueError("page must be >= 1")
-    parsed = urlparse(url)
-    query = parse_qs(parsed.query, keep_blank_values=True)
-    query["page"] = [str(page)]
-    # flatten while preserving multi-values
-    pairs: list[tuple[str, str]] = []
-    for key, values in query.items():
-        for value in values:
-            pairs.append((key, value))
-    new_query = urlencode(pairs, doseq=False)
-    return urlunparse(parsed._replace(query=new_query))
+    return _set_query_params(url, {"page": str(page)})

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from otomoto_median.models import Listing
-from otomoto_median.parser import parse_search_page, with_page
+from otomoto_median.parser import parse_search_page, with_page, with_price_order_asc
 from otomoto_median.stats import compute_stats, percentile_nearest_rank
 
 
@@ -51,6 +51,18 @@ def test_with_page_preserves_filters():
     out = with_page(url, 3)
     assert "page=3" in out
     assert "filter_float_year%3Afrom" in out or "filter_float_year:from" in out
+
+
+def test_with_price_order_asc_sets_and_overrides():
+    url = (
+        "https://www.otomoto.pl/osobowe/toyota/corolla"
+        "?search%5Bfilter_float_year%3Afrom%5D=2018"
+        "&search%5Border%5D=created_at%3Adesc"
+    )
+    out = with_price_order_asc(url)
+    assert "filter_float_year%3Afrom" in out or "filter_float_year:from" in out
+    assert "search%5Border%5D=filter_float_price%3Aasc" in out
+    assert "created_at" not in out
 
 
 def test_parse_search_page_from_fixture():

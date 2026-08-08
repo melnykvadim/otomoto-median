@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from otomoto_median.analyze import analyze_search, format_report, infer_vehicle_label
+from otomoto_median.parser import with_page, with_price_order_asc
 
 
 def _page_html(ids_prices: list[tuple[str, int]], *, total: int, offset: int, page_size: int = 2) -> str:
@@ -50,16 +51,11 @@ def _page_html(ids_prices: list[tuple[str, int]], *, total: int, offset: int, pa
 
 
 def test_analyze_search_paginates_and_dedups():
+    base = with_price_order_asc("https://www.otomoto.pl/osobowe/toyota/corolla")
     pages = {
-        "https://www.otomoto.pl/osobowe/toyota/corolla": _page_html(
-            [("1", 40_000), ("2", 50_000)], total=4, offset=0
-        ),
-        "https://www.otomoto.pl/osobowe/toyota/corolla?page=2": _page_html(
-            [("2", 50_000), ("3", 60_000)], total=4, offset=2
-        ),
-        "https://www.otomoto.pl/osobowe/toyota/corolla?page=3": _page_html(
-            [("4", 70_000)], total=4, offset=4, page_size=2
-        ),
+        base: _page_html([("1", 40_000), ("2", 50_000)], total=4, offset=0),
+        with_page(base, 2): _page_html([("2", 50_000), ("3", 60_000)], total=4, offset=2),
+        with_page(base, 3): _page_html([("4", 70_000)], total=4, offset=4, page_size=2),
     }
 
     def fake_fetch(url: str) -> str:
@@ -76,9 +72,12 @@ def test_analyze_search_paginates_and_dedups():
     assert result.stats.n == 4
     assert result.stats.median == 55_000
     assert result.stats.pages_fetched == 3
+    assert "filter_float_price" in result.search_url
+    assert "asc" in result.search_url
     report = format_report(result)
     assert "Median:" in report
     assert "55 000 PLN" in report or "55000 PLN" in report.replace(" ", "")
+    assert "filter_float_price" in report
 
     uk_report = format_report(result, lang="uk")
     assert "Аналіз цін OtoMoto" in uk_report
