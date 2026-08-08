@@ -1,0 +1,4 @@
+{
+  "name": "OtoMoto median analyzer",
+  "install": "python -m pip install -e \".[dev]\""
+}
