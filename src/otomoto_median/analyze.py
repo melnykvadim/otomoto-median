@@ -415,8 +415,7 @@ _GEARBOX_LABELS_UK = {
 def _format_engine_liters(cc: int | None) -> str:
     if cc is None or cc <= 0:
         return "—"
-    text = f"{cc / 1000:.1f}".rstrip("0").rstrip(".")
-    return text
+    return f"{cc / 1000:.1f}"
 
 
 def _format_int_spaced(value: int | None) -> str:
