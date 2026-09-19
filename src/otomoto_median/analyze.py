@@ -286,6 +286,7 @@ def format_report(
     result: AnalysisResult,
     *,
     include_breakdowns: bool = True,
+    include_listings: bool = True,
     lang: str = "en",
 ) -> str:
     """Format analysis as text. Use lang='uk' for Ukrainian (Telegram default)."""
@@ -396,4 +397,74 @@ def format_report(
         lines.append("")
         lines.append(sample_line.format(n=len(prices)))
 
+    if include_listings and result.listings:
+        table = format_listings_table(result.listings, lang=lang)
+        if table:
+            lines.append("")
+            lines.append(table)
+
+    return "\n".join(lines)
+
+
+_GEARBOX_LABELS_UK = {
+    "automatic": "автомат",
+    "manual": "механіка",
+}
+
+
+def _format_engine_liters(cc: int | None) -> str:
+    if cc is None or cc <= 0:
+        return "—"
+    text = f"{cc / 1000:.1f}".rstrip("0").rstrip(".")
+    return text
+
+
+def _format_int_spaced(value: int | None) -> str:
+    if value is None:
+        return "—"
+    return f"{value:,}".replace(",", " ")
+
+
+def format_listings_table(listings: list[Listing], *, lang: str = "en") -> str:
+    """Markdown table of listings sorted by price ascending."""
+    rows = [item for item in listings if item.price is not None and item.price > 0]
+    rows.sort(key=lambda item: (item.price or 0, item.id))
+    if not rows:
+        return ""
+
+    if lang == "uk":
+        header = "| Ціна | Мотор | Потужність | Пробіг | КПП | Назва |"
+        sep = "|------|-------|------------|--------|-----|-------|"
+        power_suffix = " к.с."
+        km_suffix = " км"
+    else:
+        header = "| Price | Engine | Power | Mileage | Gearbox | Title |"
+        sep = "|-------|--------|-------|---------|---------|-------|"
+        power_suffix = " HP"
+        km_suffix = " km"
+
+    lines = [header, sep]
+    for item in rows:
+        engine = _format_engine_liters(item.engine_capacity_cc)
+        power = (
+            f"{item.engine_power_hp}{power_suffix}"
+            if item.engine_power_hp is not None
+            else "—"
+        )
+        mileage = (
+            f"{_format_int_spaced(item.mileage_km)}{km_suffix}"
+            if item.mileage_km is not None
+            else "—"
+        )
+        if lang == "uk":
+            gearbox = _GEARBOX_LABELS_UK.get((item.gearbox or "").lower(), item.gearbox or "—")
+        else:
+            gearbox = item.gearbox or "—"
+        title = (item.title or "").strip() or "—"
+        if len(title) > 55:
+            title = title[:52] + "..."
+        price = _format_int_spaced(item.price)
+        lines.append(
+            f"| {price} | {engine} | {power} | {mileage} | {gearbox} | {title} |"
+        )
     return "\n".join(lines)

@@ -95,9 +95,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"\nSaved JSON: {args.save_json}")
 
     if args.telegram:
-        # Telegram replies are always Ukrainian.
+        # Telegram replies are always Ukrainian. Skip full listings table
+        # to stay within Telegram message size limits.
         telegram_report = format_report(
-            result, include_breakdowns=include_breakdowns, lang="uk"
+            result,
+            include_breakdowns=include_breakdowns,
+            include_listings=False,
+            lang="uk",
         )
         try:
             send_telegram_message(telegram_report)

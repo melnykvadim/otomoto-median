@@ -18,6 +18,8 @@ def _listing(price: int | None, *, year: int | None = 2019, seller: str | None =
         mileage_km=100000,
         fuel_type="hybrid",
         gearbox="automatic",
+        engine_capacity_cc=1800,
+        engine_power_hp=122,
         make="toyota",
         model="corolla",
         city="Warszawa",
@@ -92,6 +94,8 @@ def test_parse_search_page_from_fixture():
                         {"key": "model", "value": "corolla"},
                         {"key": "fuel_type", "value": "petrol"},
                         {"key": "gearbox", "value": "manual"},
+                        {"key": "engine_capacity", "value": "1598"},
+                        {"key": "engine_power", "value": "132"},
                     ],
                 }
             },
@@ -114,6 +118,8 @@ def test_parse_search_page_from_fixture():
                         {"key": "mileage", "value": "40000"},
                         {"key": "make", "value": "toyota"},
                         {"key": "model", "value": "corolla"},
+                        {"key": "engine_capacity", "value": "1798"},
+                        {"key": "engine_power", "value": "122"},
                     ],
                 }
             },
@@ -141,3 +147,6 @@ def test_parse_search_page_from_fixture():
     assert listings[1].seller_type == "professional"
     assert listings[0].year == 2018
     assert listings[1].mileage_km == 40000
+    assert listings[0].engine_capacity_cc == 1598
+    assert listings[0].engine_power_hp == 132
+    assert listings[1].engine_capacity_cc == 1798
