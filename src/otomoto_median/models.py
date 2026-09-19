@@ -15,6 +15,8 @@ class Listing:
     mileage_km: int | None
     fuel_type: str | None
     gearbox: str | None
+    engine_capacity_cc: int | None
+    engine_power_hp: int | None
     make: str | None
     model: str | None
     city: str | None

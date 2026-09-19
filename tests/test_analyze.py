@@ -78,6 +78,7 @@ def test_analyze_search_paginates_and_dedups():
     assert "Median:" in report
     assert "55 000 PLN" in report or "55000 PLN" in report.replace(" ", "")
     assert "filter_float_price" in report
+    assert "| Price |" in report
 
     uk_report = format_report(result, lang="uk")
     assert "Аналіз цін OtoMoto" in uk_report
@@ -86,6 +87,7 @@ def test_analyze_search_paginates_and_dedups():
     assert "За типом продавця:" in uk_report
     assert "приватний:" in uk_report
     assert "Median:" not in uk_report
+    assert "| Ціна |" in uk_report
 
     assert "Vehicle: Toyota Corolla" in report
 
@@ -105,6 +107,8 @@ def test_infer_vehicle_label_uses_filters():
             mileage_km=100_000,
             fuel_type="diesel",
             gearbox="manual",
+            engine_capacity_cc=1598,
+            engine_power_hp=110,
             make="volkswagen",
             model="golf",
             city="Warszawa",

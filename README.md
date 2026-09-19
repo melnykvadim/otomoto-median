@@ -29,7 +29,7 @@ python -m otomoto_median \
 | `--json` | Print full JSON to stdout |
 | `--save-json PATH` | Write full JSON result to a file |
 | `--no-breakdowns` | Hide year/seller sections in text report |
-| `--telegram` | Send the text report via Telegram Bot API (always Ukrainian) |
+| `--telegram` | Send the text report via Telegram Bot API (always Ukrainian; without full listings table) |
 
 ## Telegram
 

@@ -125,6 +125,8 @@ def parse_listing(node: dict[str, Any]) -> Listing:
         mileage_km=_to_int(params.get("mileage")),
         fuel_type=params.get("fuel_type"),
         gearbox=params.get("gearbox"),
+        engine_capacity_cc=_to_int(params.get("engine_capacity")),
+        engine_power_hp=_to_int(params.get("engine_power")),
         make=params.get("make"),
         model=params.get("model"),
         city=str(city) if city else None,
